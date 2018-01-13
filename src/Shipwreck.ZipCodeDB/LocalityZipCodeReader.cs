@@ -44,11 +44,12 @@ namespace Shipwreck.ZipCodeDB
 
         public bool MoveNext()
         {
-            var fs = _Parser?.ReadFields();
+            var fs = _PrefetchedFields ?? _Parser?.ReadFields();
             if (fs == null)
             {
                 return false;
             }
+            _PrefetchedFields = null;
 
             CityCode = string.Intern(fs[0]);
             ZipCode5 = string.Intern(fs[1]);
@@ -69,14 +70,43 @@ namespace Shipwreck.ZipCodeDB
             ChangeType = Enum.TryParse(fs[13], out ChangeType ct) ? ct : ChangeType.NotChanged;
             ChangeReason = Enum.TryParse(fs[14], out ChangeReason cr) ? cr : ChangeReason.NotChanged;
 
+            OnRead();
+
+            return true;
+        }
+
+        protected virtual void OnRead()
+        {
             if (IsDefault = (Locality == "以下に掲載がない場合"))
             {
                 LocalityKana = null;
                 Locality = null;
             }
-
-            return true;
         }
+
+        #region Prefetching
+
+        private string[] _PrefetchedFields;
+
+        protected string PrefetchedCityCode => _PrefetchedFields?[0];
+        protected string PrefetchedZipCode5 => _PrefetchedFields?[1];
+        protected string PrefetchedZipCode7 => _PrefetchedFields?[2];
+
+        protected string PrefetchedPrefectureKana => _PrefetchedFields?[3];
+        protected string PrefetchedCityKana => _PrefetchedFields?[4];
+        protected string PrefetchedLocalityKana => _PrefetchedFields?[5];
+
+        protected string PrefetchedPrefecture => _PrefetchedFields?[6];
+        protected string PrefetchedCity => _PrefetchedFields?[7];
+        protected string PrefetchedLocality => _PrefetchedFields?[8];
+
+        protected bool Prefetch()
+            => (_PrefetchedFields = _Parser?.ReadFields()) != null;
+
+        protected void DiscardPrefetchedFields()
+            => _PrefetchedFields = null;
+
+        #endregion Prefetching
 
         #region IDisposable Support
 
