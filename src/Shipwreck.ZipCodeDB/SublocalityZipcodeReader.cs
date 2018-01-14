@@ -9,14 +9,31 @@ namespace Shipwreck.ZipCodeDB
     {
         private sealed class SublocalityEntry
         {
+            private static readonly Regex _PointyKana = new Regex(@"\<(.*)ｦﾉｿﾞｸ\>$");
+            private static readonly Regex _Pointy = new Regex(@"「(.*)を除く」$");
+
             public SublocalityEntry(string name, string kana)
             {
                 Name = name;
                 Kana = kana;
+
+                var pcm = _Pointy.Match(name);
+                var pkm = _PointyKana.Match(kana);
+
+                if (pcm.Success && pkm.Success)
+                {
+                    ExceptFor = pcm.Groups[1].Value;
+                    ExceptForKana = pkm.Groups[1].Value;
+                    Name = name.Substring(0, pcm.Index);
+                    Kana = kana.Substring(0, pkm.Index);
+                }
             }
 
             public string Name { get; }
             public string Kana { get; }
+
+            public string ExceptFor { get; }
+            public string ExceptForKana { get; }
         }
 
         private static readonly Regex _ParenKana = new Regex(@"\((.*)\)$");
@@ -111,11 +128,15 @@ namespace Shipwreck.ZipCodeDB
                 var se = _Sublocalities[_SublocalityIndex];
                 Sublocality = se.Name;
                 SublocalityKana = se.Kana;
+                ExceptFor = se.ExceptFor;
+                ExceptForKana = se.ExceptForKana;
                 _SublocalityIndex++;
                 return true;
             }
 
             _Sublocalities = null;
+            Sublocality = null;
+            SublocalityKana = null;
 
             return false;
         }
