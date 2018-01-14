@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Shipwreck.ZipCodeDB
 {
-    public class SublocalityZipcodeReader : ConcatenatingLocalityZipCodeReader
+    public class SublocalityZipcodeReader : LocalityZipCodeReader
     {
         private sealed class SublocalityEntry
         {

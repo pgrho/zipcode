@@ -1,15 +1,15 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Shipwreck.ZipCodeDB
 {
-    public class ConcatenatingLocalityZipCodeReaderTest
+    public class RawLocalityZipCodeReaderTest
     {
         private readonly ITestOutputHelper _Output;
 
-        public ConcatenatingLocalityZipCodeReaderTest(ITestOutputHelper output)
+        public RawLocalityZipCodeReaderTest(ITestOutputHelper output)
         {
             _Output = output;
         }
@@ -18,7 +18,7 @@ namespace Shipwreck.ZipCodeDB
         public void Test()
         {
             using (var sr = new StreamReader("ADD_1710.CSV", Encoding.GetEncoding(932)))
-            using (var zr = new ConcatenatingLocalityZipCodeReader(sr))
+            using (var zr = new RawLocalityZipCodeReader(sr))
             {
                 while (zr.MoveNext())
                 {
