@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace Shipwreck.ZipCodeDB
 
             private static readonly Regex _Number = new Regex(@"([０-９]+)～([０-９]+)");
             private static readonly Regex _NumberKana = new Regex(@"([0-9]+)\-([0-9]+)");
+            private static readonly Regex _NumberSingle = new Regex(@"^[０-９]+$");
 
             public SublocalityEntry(string name, string kana)
             {
@@ -46,6 +48,12 @@ namespace Shipwreck.ZipCodeDB
             public string ExceptFor { get; }
             public string ExceptForKana { get; }
 
+            private static int ParseFullWidth(string s)
+                => s.Aggregate(0, (v, c) => v * 10 + c - '０');
+
+            private static int ParseHalfWidth(string s)
+                => s.Aggregate(0, (v, c) => v * 10 + c - '0');
+
             public IEnumerable<SublocalityEntry> Populate()
             {
                 var ncm = _Number.Match(Name);
@@ -53,10 +61,11 @@ namespace Shipwreck.ZipCodeDB
 
                 if (ncm.Success && nkm.Success)
                 {
-                    var c1 = ncm.Groups[1].Value.Aggregate(0, (v, c) => v * 10 + c - '０');
-                    var c2 = ncm.Groups[2].Value.Aggregate(0, (v, c) => v * 10 + c - '０');
-                    var k1 = ncm.Groups[1].Value.Aggregate(0, (v, c) => v * 10 + c - '0');
-                    var k2 = ncm.Groups[2].Value.Aggregate(0, (v, c) => v * 10 + c - '0');
+                    var c1 = ParseFullWidth(ncm.Groups[1].Value);
+                    var c2 = ParseFullWidth(ncm.Groups[2].Value);
+                    var k1 = ParseHalfWidth(ncm.Groups[1].Value);
+                    var k2 = ParseHalfWidth(ncm.Groups[2].Value);
+
                     if (c1 == k1 && c2 == k2 && c1 < c2)
                     {
                         var pc = Name.Substring(0, ncm.Index);
@@ -64,14 +73,80 @@ namespace Shipwreck.ZipCodeDB
                         var sc = Name.Substring(ncm.Index + ncm.Length);
                         var sk = Kana.Substring(nkm.Index + nkm.Length);
 
+                        Func<int, bool> excepted = null;
+
+                        if (ExceptFor != null && ExceptFor.StartsWith(pc) && ExceptFor.EndsWith(sc)
+                            && ExceptForKana != null && ExceptForKana.StartsWith(pk) && ExceptForKana.EndsWith(sk))
+                        {
+                            var ecs = ExceptFor.Substring(pc.Length, ExceptFor.Length - pc.Length - sc.Length).Split('、');
+                            var eks = ExceptForKana.Substring(pk.Length, ExceptForKana.Length - pk.Length - sk.Length).Split(',');
+
+                            if (ecs.Length == eks.Length)
+                            {
+                                for (int i = 0; i < ecs.Length; i++)
+                                {
+                                    var ec = ecs[i];
+                                    var ek = eks[i];
+
+                                    var encm = _Number.Match(ec);
+                                    var enkm = _NumberKana.Match(ek);
+
+                                    if (encm.Success && encm.Index == 0 && encm.Length == ec.Length
+                                        && enkm.Success && enkm.Index == 0 && enkm.Length == ek.Length)
+                                    {
+                                        var ec1 = ParseFullWidth(encm.Groups[1].Value);
+                                        var ec2 = ParseFullWidth(encm.Groups[2].Value);
+                                        var ek1 = ParseFullWidth(enkm.Groups[1].Value);
+                                        var ek2 = ParseFullWidth(enkm.Groups[2].Value);
+
+                                        if (ec1 == ek1 && ec2 == ek2 && ec1 < ec2)
+                                        {
+                                            excepted = excepted != null ? v => excepted(v) || ec1 <= v && v <= ec2
+                                                        : (Func<int, bool>)(v => ec1 <= v && v <= ec2);
+                                        }
+                                        else
+                                        {
+                                            excepted = null;
+                                            break;
+                                        }
+                                    }
+                                    else if (_NumberSingle.IsMatch(ec)
+                                        && int.TryParse(ek, out var ekn)
+                                        && ekn == ParseFullWidth(ec))
+                                    {
+                                        excepted = excepted != null ? v => excepted(v) || v == ekn
+                                                    : (Func<int, bool>)(v => v == ekn);
+                                    }
+                                    else
+                                    {
+                                        excepted = null;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        var ef = ExceptFor;
+                        var efk = ExceptForKana;
+                        if (excepted != null)
+                        {
+                            ef = null;
+                            efk = null;
+                        }
+
                         for (var i = c1; i <= c2; i++)
                         {
+                            if (excepted?.Invoke(i) == true)
+                            {
+                                continue;
+                            }
+
                             yield return new SublocalityEntry
                                 (
                                     $"{pc}{new string(i.ToString("D").Select(c => (char)(c + '０' - '0')).ToArray())}{sc}",
                                     $"{pk}{i}{sk}",
-                                    ExceptFor,
-                                    ExceptForKana);
+                                    ef,
+                                    efk);
                         }
 
                         yield break;
