@@ -42,7 +42,7 @@ namespace Shipwreck.ZipCodeDB
         public ChangeType ChangeType { get; protected set; }
         public ChangeReason ChangeReason { get; protected set; }
 
-        public bool MoveNext()
+        public virtual bool MoveNext()
         {
             var fs = _PrefetchedFields ?? _Parser?.ReadFields();
             if (fs == null)
