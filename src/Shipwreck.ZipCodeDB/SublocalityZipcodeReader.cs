@@ -12,6 +12,9 @@ namespace Shipwreck.ZipCodeDB
             private static readonly Regex _PointyKana = new Regex(@"\<(.*)ｦﾉｿﾞｸ\>$");
             private static readonly Regex _Pointy = new Regex(@"「(.*)を除く」$");
 
+            private static readonly Regex _Number = new Regex(@"([０-９]+)～([０-９]+)");
+            private static readonly Regex _NumberKana = new Regex(@"([0-9]+)\-([0-9]+)");
+
             public SublocalityEntry(string name, string kana)
             {
                 Name = name;
@@ -29,11 +32,53 @@ namespace Shipwreck.ZipCodeDB
                 }
             }
 
+            public SublocalityEntry(string name, string kan, string exceptFor, string exceptForKana)
+            {
+                Name = name;
+                Kana = Kana;
+                ExceptFor = exceptFor;
+                ExceptForKana = exceptForKana;
+            }
+
             public string Name { get; }
             public string Kana { get; }
 
             public string ExceptFor { get; }
             public string ExceptForKana { get; }
+
+            public IEnumerable<SublocalityEntry> Populate()
+            {
+                var ncm = _Number.Match(Name);
+                var nkm = _NumberKana.Match(Kana);
+
+                if (ncm.Success && nkm.Success)
+                {
+                    var c1 = ncm.Groups[1].Value.Aggregate(0, (v, c) => v * 10 + c - '０');
+                    var c2 = ncm.Groups[2].Value.Aggregate(0, (v, c) => v * 10 + c - '０');
+                    var k1 = ncm.Groups[1].Value.Aggregate(0, (v, c) => v * 10 + c - '0');
+                    var k2 = ncm.Groups[2].Value.Aggregate(0, (v, c) => v * 10 + c - '0');
+                    if (c1 == k1 && c2 == k2 && c1 < c2)
+                    {
+                        var pc = Name.Substring(0, ncm.Index);
+                        var pk = Kana.Substring(0, nkm.Index);
+                        var sc = Name.Substring(ncm.Index + ncm.Length);
+                        var sk = Kana.Substring(nkm.Index + nkm.Length);
+
+                        for (var i = c1; i <= c2; i++)
+                        {
+                            yield return new SublocalityEntry
+                                (
+                                    $"{pc}{new string(i.ToString("D").Select(c => (char)(c + '０' - '0')).ToArray())}{sc}",
+                                    $"{pk}{i}{sk}",
+                                    ExceptFor,
+                                    ExceptForKana);
+                        }
+
+                        yield break;
+                    }
+                }
+                yield return this;
+            }
         }
 
         private static readonly Regex _ParenKana = new Regex(@"\((.*)\)$");
@@ -111,9 +156,8 @@ namespace Shipwreck.ZipCodeDB
                             raws = new[] { new SublocalityEntry(cv, kv) };
                         }
 
-                        // TODO: expand tilde
                         _SublocalityIndex = 0;
-                        _Sublocalities = raws.ToList();
+                        _Sublocalities = raws.SelectMany(e => e.Populate()).ToList();
                     }
                 }
             }
