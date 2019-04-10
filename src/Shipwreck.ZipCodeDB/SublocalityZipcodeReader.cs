@@ -161,8 +161,8 @@ namespace Shipwreck.Postal
         private static readonly Regex _ExceptForKana = new Regex(@"ｦﾉｿﾞｸ\)$");
         private static readonly Regex _ExceptFor = new Regex(@"を除く）$");
 
-        private static readonly Regex _SplitKana = new Regex(@"(?<=[,]+(\<[^>]+\>)?),");
-        private static readonly Regex _Split = new Regex("(?<=[、]+(「[^」]+」)?)、");
+        private static readonly Regex _SplitKana = new Regex(@"､");
+        private static readonly Regex _Split = new Regex("、");
 
         public SublocalityZipcodeReader(TextReader reader, bool leaveOpen = false)
             : base(reader, leaveOpen: leaveOpen)

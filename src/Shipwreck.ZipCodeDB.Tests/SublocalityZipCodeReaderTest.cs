@@ -92,6 +92,55 @@ namespace Shipwreck.Postal
         }
 
         [Fact]
+        public void SplitSublocalityTest()
+        {
+            var locName = "ëÂéö";
+            var locKana = "µµ±ªﬁ";
+            var subName1 = "ÇPíöñ⁄";
+            var subKana1 = "1¡Æ≥“";
+            var subName2 = "ÇQíöñ⁄";
+            var subKana2 = "2¡Æ≥“";
+
+            using (var sr = new StringReader(
+                LocalityRow(
+                    cityCode: CITY_CODE, zipCode: ZIP_CODE,
+                    prefectureName: PREF_NAME,
+                    prefectureKana: PREF_KANA,
+                    cityName: CITY_NAME,
+                    cityKana: CITY_KANA,
+                    localityName: $"{locName}Åi{subName1}ÅA{subName2}Åj",
+                    localityKana: $"{locKana}({subKana1}§{subKana2})")))
+            using (var zr = new SublocalityZipcodeReader(sr))
+            {
+                Assert.True(zr.MoveNext());
+                Assert.Equal(CITY_CODE, zr.CityCode);
+                Assert.Equal(ZIP_CODE, zr.ZipCode7);
+                Assert.Equal(PREF_NAME, zr.Prefecture);
+                Assert.Equal(PREF_KANA, zr.PrefectureKana);
+                Assert.Equal(CITY_NAME, zr.City);
+                Assert.Equal(CITY_KANA, zr.CityKana);
+                Assert.Equal(locName, zr.Locality);
+                Assert.Equal(locKana, zr.LocalityKana);
+                Assert.Equal(subName1, zr.Sublocality);
+                Assert.Equal(subKana1, zr.SublocalityKana);
+
+                Assert.True(zr.MoveNext());
+                Assert.Equal(CITY_CODE, zr.CityCode);
+                Assert.Equal(ZIP_CODE, zr.ZipCode7);
+                Assert.Equal(PREF_NAME, zr.Prefecture);
+                Assert.Equal(PREF_KANA, zr.PrefectureKana);
+                Assert.Equal(CITY_NAME, zr.City);
+                Assert.Equal(CITY_KANA, zr.CityKana);
+                Assert.Equal(locName, zr.Locality);
+                Assert.Equal(locKana, zr.LocalityKana);
+                Assert.Equal(subName2, zr.Sublocality);
+                Assert.Equal(subKana2, zr.SublocalityKana);
+
+                Assert.False(zr.MoveNext());
+            }
+        }
+
+        [Fact]
         public void Test()
         {
             using (var sr = new StreamReader("ADD_1710.CSV", Encoding.GetEncoding(932)))
