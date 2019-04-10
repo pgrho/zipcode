@@ -1,4 +1,4 @@
-namespace Shipwreck.ZipCodeDB
+namespace Shipwreck.Postal
 {
     public enum ChangeType
     {

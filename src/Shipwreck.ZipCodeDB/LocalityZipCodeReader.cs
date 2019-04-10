@@ -1,7 +1,6 @@
 using System.IO;
-using System.Text.RegularExpressions;
 
-namespace Shipwreck.ZipCodeDB
+namespace Shipwreck.Postal
 {
     public class LocalityZipCodeReader : RawLocalityZipCodeReader
     {

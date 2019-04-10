@@ -3,7 +3,7 @@ using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Shipwreck.ZipCodeDB
+namespace Shipwreck.Postal
 {
     public class RawLocalityZipCodeReaderTest
     {

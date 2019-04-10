@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Shipwreck.ZipCodeDB
+namespace Shipwreck.Postal
 {
     public class SublocalityZipcodeReader : LocalityZipCodeReader
     {
@@ -83,7 +83,7 @@ namespace Shipwreck.ZipCodeDB
 
                             if (ecs.Length == eks.Length)
                             {
-                                for (int i = 0; i < ecs.Length; i++)
+                                for (var i = 0; i < ecs.Length; i++)
                                 {
                                     var ec = ecs[i];
                                     var ek = eks[i];
@@ -158,7 +158,7 @@ namespace Shipwreck.ZipCodeDB
 
         private static readonly Regex _ParenKana = new Regex(@"\((.*)\)$");
         private static readonly Regex _Paren = new Regex(@"（(.*)）$");
-        private static readonly Regex _ExceptForKana = new Regex(@"\ｦﾉｿﾞｸ)$");
+        private static readonly Regex _ExceptForKana = new Regex(@"ｦﾉｿﾞｸ\)$");
         private static readonly Regex _ExceptFor = new Regex(@"を除く）$");
 
         private static readonly Regex _SplitKana = new Regex(@"(?<=[,]+(\<[^>]+\>)?),");

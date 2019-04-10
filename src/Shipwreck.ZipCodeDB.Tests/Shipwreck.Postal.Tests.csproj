@@ -1,16 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
-    <RootNamespace>Shipwreck.ZipCodeDB</RootNamespace>
-
+    <RootNamespace>Shipwreck.Postal</RootNamespace>
     <ApplicationIcon />
-
     <OutputType>Exe</OutputType>
-
     <StartupObject>Program</StartupObject>
   </PropertyGroup>
 
@@ -32,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shipwreck.ZipCodeDB\Shipwreck.ZipCodeDB.csproj" />
+    <ProjectReference Include="..\Shipwreck.ZipCodeDB\Shipwreck.Postal.csproj" />
   </ItemGroup>
 
 </Project>

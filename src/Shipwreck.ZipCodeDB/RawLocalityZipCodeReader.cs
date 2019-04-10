@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.FileIO;
+using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using Microsoft.VisualBasic.FileIO;
 
-namespace Shipwreck.ZipCodeDB
+namespace Shipwreck.Postal
 {
     public class RawLocalityZipCodeReader : IDisposable
     {
@@ -110,11 +110,11 @@ namespace Shipwreck.ZipCodeDB
 
         #region IDisposable Support
 
-        private bool disposedValue;
+        protected bool IsDisposed { get; private set; }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!IsDisposed)
             {
                 if (disposing)
                 {
@@ -125,7 +125,7 @@ namespace Shipwreck.ZipCodeDB
                     _Parser = null;
                 }
 
-                disposedValue = true;
+                IsDisposed = true;
             }
         }
 
