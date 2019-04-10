@@ -208,9 +208,6 @@ namespace Shipwreck.Postal
                     {
                         ExceptFor = Locality.Substring(cm.Index + 1, Locality.Length - 5 - cm.Index);
                         ExceptForKana = LocalityKana.Substring(cem.Index + 1, LocalityKana.Length - 5 - cem.Index);
-
-                        Locality = Locality.Substring(0, cm.Index);
-                        LocalityKana = LocalityKana.Substring(0, cem.Index);
                     }
                     else
                     {
@@ -233,7 +230,10 @@ namespace Shipwreck.Postal
 
                         _SublocalityIndex = 0;
                         _Sublocalities = raws.SelectMany(e => e.Populate()).ToList();
+                        MoveNextSublocality();
                     }
+                    Locality = Locality.Substring(0, cm.Index);
+                    LocalityKana = LocalityKana.Substring(0, km.Index);
                 }
             }
 

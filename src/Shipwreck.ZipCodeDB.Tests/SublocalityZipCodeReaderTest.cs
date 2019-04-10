@@ -6,8 +6,16 @@ using Xunit.Abstractions;
 namespace Shipwreck.Postal
 {
     using static ZipCodeReaderTestHelper;
+
     public class SublocalityZipCodeReaderTest
     {
+        private const string CITY_CODE = "99999";
+        private const string ZIP_CODE = "1234567";
+        private const string PREF_NAME = "東京都";
+        private const string PREF_KANA = "ﾄｳｷｮｳﾄ";
+        private const string CITY_NAME = "千代田区";
+        private const string CITY_KANA = "ﾁﾖﾀﾞｸ";
+
         private readonly ITestOutputHelper _Output;
 
         public SublocalityZipCodeReaderTest(ITestOutputHelper output)
@@ -16,40 +24,68 @@ namespace Shipwreck.Postal
         }
 
         [Fact]
-        public void Simple()
+        public void NoSublocalityTest()
         {
-            var CC = "99999";
-            var Z7 = "1234567";
-
-            var PN = "東京都";
-            var PK = "ﾄｳｷｮｳﾄ";
-            var CN = "千代田区";
-            var CK = "ﾁﾖﾀﾞｸ";
-            var LN = "番地";
-            var LK = "ﾊﾞﾝﾁ";
+            var locName = "番地";
+            var locKana = "ﾊﾞﾝﾁ";
 
             using (var sr = new StringReader(
                 LocalityRow(
-                    cityCode: CC, zipCode: Z7,
-                    prefectureName: PN,
-                    prefectureKana: PK,
-                    cityName: CN,
-                    cityKana: CK,
-                    localityName: LN,
-                    localityKana: LK)))
+                    cityCode: CITY_CODE, zipCode: ZIP_CODE,
+                    prefectureName: PREF_NAME,
+                    prefectureKana: PREF_KANA,
+                    cityName: CITY_NAME,
+                    cityKana: CITY_KANA,
+                    localityName: locName,
+                    localityKana: locKana)))
             using (var zr = new SublocalityZipcodeReader(sr))
             {
                 Assert.True(zr.MoveNext());
-                Assert.Equal(CC, zr.CityCode);
-                Assert.Equal(Z7, zr.ZipCode7);
-                Assert.Equal(PN, zr.Prefecture);
-                Assert.Equal(PK, zr.PrefectureKana);
-                Assert.Equal(CN, zr.City);
-                Assert.Equal(CK, zr.CityKana);
-                Assert.Equal(LN, zr.Locality);
-                Assert.Equal(LK, zr.LocalityKana);
+                Assert.Equal(CITY_CODE, zr.CityCode);
+                Assert.Equal(ZIP_CODE, zr.ZipCode7);
+                Assert.Equal(PREF_NAME, zr.Prefecture);
+                Assert.Equal(PREF_KANA, zr.PrefectureKana);
+                Assert.Equal(CITY_NAME, zr.City);
+                Assert.Equal(CITY_KANA, zr.CityKana);
+                Assert.Equal(locName, zr.Locality);
+                Assert.Equal(locKana, zr.LocalityKana);
                 Assert.Equal("", zr.Sublocality ?? "");
                 Assert.Equal("", zr.SublocalityKana ?? "");
+
+                Assert.False(zr.MoveNext());
+            }
+        }
+
+        [Fact]
+        public void SublocalityTest()
+        {
+            var locName = "大字";
+            var locKana = "ｵｵｱｻﾞ";
+            var subName = "丁目";
+            var subKana = "ﾁｮｳﾒ";
+
+            using (var sr = new StringReader(
+                LocalityRow(
+                    cityCode: CITY_CODE, zipCode: ZIP_CODE,
+                    prefectureName: PREF_NAME,
+                    prefectureKana: PREF_KANA,
+                    cityName: CITY_NAME,
+                    cityKana: CITY_KANA,
+                    localityName: $"{locName}（{subName}）",
+                    localityKana: $"{locKana}({subKana})")))
+            using (var zr = new SublocalityZipcodeReader(sr))
+            {
+                Assert.True(zr.MoveNext());
+                Assert.Equal(CITY_CODE, zr.CityCode);
+                Assert.Equal(ZIP_CODE, zr.ZipCode7);
+                Assert.Equal(PREF_NAME, zr.Prefecture);
+                Assert.Equal(PREF_KANA, zr.PrefectureKana);
+                Assert.Equal(CITY_NAME, zr.City);
+                Assert.Equal(CITY_KANA, zr.CityKana);
+                Assert.Equal(locName, zr.Locality);
+                Assert.Equal(locKana, zr.LocalityKana);
+                Assert.Equal(subName, zr.Sublocality);
+                Assert.Equal(subKana, zr.SublocalityKana);
 
                 Assert.False(zr.MoveNext());
             }
