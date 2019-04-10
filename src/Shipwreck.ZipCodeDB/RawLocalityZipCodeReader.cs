@@ -1,23 +1,19 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using System;
+﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
 
 namespace Shipwreck.Postal
 {
+
     public class RawLocalityZipCodeReader : IDisposable
     {
         private static readonly Regex _BooleanPattern = new Regex(@"^\s*1\s*$");
 
-        // TODO: remove VB dependency
-        private TextFieldParser _Parser;
-
-        private readonly bool _LeaveOpen;
+        private CsvReader _Parser;
 
         public RawLocalityZipCodeReader(TextReader reader, bool leaveOpen = false)
         {
-            _Parser = new TextFieldParser(reader) { Delimiters = new[] { "," }, TrimWhiteSpace = true };
-            _LeaveOpen = leaveOpen;
+            _Parser = new CsvReader(reader, leaveOpen: leaveOpen);
         }
 
         public string CityCode { get; protected set; }
@@ -42,14 +38,24 @@ namespace Shipwreck.Postal
         public ChangeType ChangeType { get; protected set; }
         public ChangeReason ChangeReason { get; protected set; }
 
+        private string[] _Buffer;
+
         public virtual bool MoveNext()
         {
-            var fs = _PrefetchedFields ?? _Parser?.ReadFields();
-            if (fs == null)
+            string[] fs;
+            if (_IsPrefeched)
             {
-                return false;
+                fs = _PrefetchBuffer;
+                _IsPrefeched = false;
             }
-            _PrefetchedFields = null;
+            else
+            {
+                if (!_Parser.ReadAndCopyTo(ref _Buffer))
+                {
+                    return false;
+                }
+                fs = _Buffer;
+            }
 
             CityCode = string.Intern(fs[0]);
             ZipCode5 = string.Intern(fs[1]);
@@ -86,25 +92,25 @@ namespace Shipwreck.Postal
 
         #region Prefetching
 
-        private string[] _PrefetchedFields;
+        private string[] _PrefetchBuffer;
+        private bool _IsPrefeched;
 
-        protected string PrefetchedCityCode => _PrefetchedFields?[0];
-        protected string PrefetchedZipCode5 => _PrefetchedFields?[1];
-        protected string PrefetchedZipCode7 => _PrefetchedFields?[2];
+        protected string PrefetchedCityCode => _IsPrefeched ? _PrefetchBuffer?[0] : null;
+        protected string PrefetchedZipCode5 => _IsPrefeched ? _PrefetchBuffer?[1] : null;
+        protected string PrefetchedZipCode7 => _IsPrefeched ? _PrefetchBuffer?[2] : null;
 
-        protected string PrefetchedPrefectureKana => _PrefetchedFields?[3];
-        protected string PrefetchedCityKana => _PrefetchedFields?[4];
-        protected string PrefetchedLocalityKana => _PrefetchedFields?[5];
+        protected string PrefetchedPrefectureKana => _IsPrefeched ? _PrefetchBuffer?[3] : null;
+        protected string PrefetchedCityKana => _IsPrefeched ? _PrefetchBuffer?[4] : null;
+        protected string PrefetchedLocalityKana => _IsPrefeched ? _PrefetchBuffer?[5] : null;
 
-        protected string PrefetchedPrefecture => _PrefetchedFields?[6];
-        protected string PrefetchedCity => _PrefetchedFields?[7];
-        protected string PrefetchedLocality => _PrefetchedFields?[8];
+        protected string PrefetchedPrefecture => _IsPrefeched ? _PrefetchBuffer?[6] : null;
+        protected string PrefetchedCity => _IsPrefeched ? _PrefetchBuffer?[7] : null;
+        protected string PrefetchedLocality => _IsPrefeched ? _PrefetchBuffer?[8] : null;
 
         protected bool Prefetch()
-            => (_PrefetchedFields = _Parser?.ReadFields()) != null;
+            => _IsPrefeched = _Parser.ReadAndCopyTo(ref _PrefetchBuffer);
 
-        protected void DiscardPrefetchedFields()
-            => _PrefetchedFields = null;
+        protected void DiscardPrefetchedFields() => _IsPrefeched = false;
 
         #endregion Prefetching
 
@@ -118,10 +124,7 @@ namespace Shipwreck.Postal
             {
                 if (disposing)
                 {
-                    if (!_LeaveOpen)
-                    {
-                        _Parser?.Dispose();
-                    }
+                    _Parser?.Dispose();
                     _Parser = null;
                 }
 
