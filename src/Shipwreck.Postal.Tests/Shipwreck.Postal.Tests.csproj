@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shipwreck.ZipCodeDB\Shipwreck.Postal.csproj" />
+    <ProjectReference Include="..\Shipwreck.Postal\Shipwreck.Postal.csproj" />
   </ItemGroup>
 
 </Project>
