@@ -40,7 +40,7 @@ namespace Shipwreck.Postal
                     localityKana: locKana)))
             using (var zr = new SublocalityZipcodeReader(sr))
             {
-                AssertNextRow(zr, locName, locKana, null, null);
+                AssertNextRow(zr, locName: locName, locKana: locKana);
 
                 Assert.False(zr.MoveNext());
             }
@@ -65,7 +65,12 @@ namespace Shipwreck.Postal
                     localityKana: $"{locKana}({subKana})")))
             using (var zr = new SublocalityZipcodeReader(sr))
             {
-                AssertNextRow(zr, locName, locKana, subName, subKana);
+                AssertNextRow(
+                    zr,
+                    locName: locName,
+                    locKana: locKana,
+                    subName: subName,
+                    subKana: subKana);
 
                 Assert.False(zr.MoveNext());
             }
@@ -92,14 +97,60 @@ namespace Shipwreck.Postal
                     localityKana: $"{locKana}({subKana1}§{subKana2})")))
             using (var zr = new SublocalityZipcodeReader(sr))
             {
-                AssertNextRow(zr, locName, locKana, subName1, subKana1);
-                AssertNextRow(zr, locName, locKana, subName2, subKana2);
+                AssertNextRow(
+                    zr,
+                    locName: locName,
+                    locKana: locKana,
+                    subName: subName1,
+                    subKana: subKana1);
+                AssertNextRow(
+                    zr,
+                    locName: locName,
+                    locKana: locKana,
+                    subName: subName2,
+                    subKana: subKana2);
 
                 Assert.False(zr.MoveNext());
             }
         }
 
-        private static void AssertNextRow(SublocalityZipcodeReader zr, string locName = null, string locKana = null, string subName = null, string subKana = null)
+        [Fact]
+        public void SplitExceptForTest()
+        {
+            var locName = "ëÂéö";
+            var locKana = "µµ±ªﬁ";
+            var exceptFor1 = "ÇPíöñ⁄";
+            var exceptKana1 = "1¡Æ≥“";
+            var exceptFor2 = "ÇQíöñ⁄";
+            var exceptKana2 = "2¡Æ≥“";
+
+            using (var sr = new StringReader(
+                LocalityRow(
+                    cityCode: CITY_CODE, zipCode: ZIP_CODE,
+                    prefectureName: PREF_NAME,
+                    prefectureKana: PREF_KANA,
+                    cityName: CITY_NAME,
+                    cityKana: CITY_KANA,
+                    localityName: $"{locName}Åi{exceptFor1}ÅA{exceptFor2}ÇèúÇ≠Åj",
+                    localityKana: $"{locKana}({exceptKana1}§{exceptKana2}¶…øﬁ∏)")))
+            using (var zr = new SublocalityZipcodeReader(sr))
+            {
+                AssertNextRow(
+                    zr,
+                    locName: locName,
+                    locKana: locKana,
+                    exceptFor: exceptFor1 + "ÅA" + exceptFor2,
+                    exceptForKana: exceptKana1 + "§" + exceptKana2);
+
+                Assert.False(zr.MoveNext());
+            }
+        }
+
+        private static void AssertNextRow(
+            SublocalityZipcodeReader zr,
+            string locName = null, string locKana = null,
+            string subName = null, string subKana = null,
+            string exceptFor = null, string exceptForKana = null)
         {
             Assert.True(zr.MoveNext());
             Assert.Equal(CITY_CODE, zr.CityCode);
@@ -112,6 +163,8 @@ namespace Shipwreck.Postal
             Assert.Equal(locKana ?? string.Empty, zr.LocalityKana ?? string.Empty);
             Assert.Equal(subName ?? string.Empty, zr.Sublocality ?? string.Empty);
             Assert.Equal(subKana ?? string.Empty, zr.SublocalityKana ?? string.Empty);
+            Assert.Equal(exceptFor ?? string.Empty, zr.ExceptFor ?? string.Empty);
+            Assert.Equal(exceptForKana ?? string.Empty, zr.ExceptForKana ?? string.Empty);
         }
 
         [Fact]
